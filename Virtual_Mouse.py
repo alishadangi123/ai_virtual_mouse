@@ -367,7 +367,7 @@ class GestureController:
                 success, image = GestureController.cap.read()
 
                 if not success:
-                    print("Ignoring empty camera frame.")
+                    print("Ignore empty camera frame.")
                     continue
                 
                 image = cv2.cvtColor(cv2.flip(image, 1), cv2.COLOR_BGR2RGB)
