@@ -15,6 +15,7 @@ pyautogui.FAILSAFE = False
 mp_drawing = mp.solutions.drawing_utils
 mp_hands = mp.solutions.hands
 
+
 # Gesture Encodings 
 class Gest(IntEnum):
     # Binary Encoded
@@ -28,7 +29,7 @@ class Gest(IntEnum):
     LAST4 = 15
     THUMB = 16    
     PALM = 31
-    
+     
     # Extra Mappings
     V_GEST = 33
     TWO_FINGER_CLOSED = 34
@@ -37,8 +38,8 @@ class Gest(IntEnum):
 
 # Multi-handedness Labels
 class HLabel(IntEnum):
-    MINOR = 0
-    MAJOR = 1
+    MINOR = 0 #left hand
+    MAJOR = 1 #right hand
 
 # Convert Mediapipe Landmarks to recognizable Gestures
 class HandRecog:
@@ -111,6 +112,7 @@ class HandRecog:
         elif Gest.FIRST2 == self.finger :
             point = [[8,12],[5,9]]
             dist1 = self.get_dist(point[0])
+            
             dist2 = self.get_dist(point[1])
             ratio = dist1/dist2
             if ratio > 1.7:
@@ -157,6 +159,7 @@ class Controller:
         dist = round((Controller.pinchstartycoord - hand_result.landmark[8].y)*10,1)
         return dist
 
+
     def getpinchxlv(hand_result):
         dist = round((hand_result.landmark[8].x - Controller.pinchstartxcoord)*10,1)
         return dist
@@ -173,7 +176,7 @@ class Controller:
     def changesystemvolume():
         devices = AudioUtilities.GetSpeakers()
         interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
-        volume = cast(interface, POINTER(IAudioEndpointVolume))
+        volume = cast(interface, POINTER(IAudioEndpointVolume)) 
         currentVolumeLv = volume.GetMasterVolumeLevelScalar()
         currentVolumeLv += Controller.pinchlv/50.0
         if currentVolumeLv > 1.0:
@@ -233,13 +236,13 @@ class Controller:
             Controller.framecount = 0
             Controller.pinchlv = Controller.prevpinchlv
 
-            if Controller.pinchdirectionflag == True:
+            if Controller.pinchdirectionflag == True:#store the direction of the pinch gesture(pinchdirectionflag)
                 controlHorizontal() #x
 
             elif Controller.pinchdirectionflag == False:
                 controlVertical() #y
 
-        lvx =  Controller.getpinchxlv(hand_result)
+        lvx =  Controller.getpinchxlv(hand_result) # The resulting values of lvx and lvy are used to determine the direction and strength(amount of pinching) of the scrolling action.
         lvy =  Controller.getpinchylv(hand_result)
             
         if abs(lvy) > abs(lvx) and abs(lvy) > Controller.pinch_threshold:
@@ -317,19 +320,21 @@ class Controller:
 
 class GestureController:
     gc_mode = 0
-    cap = None
-    CAM_HEIGHT = None
-    CAM_WIDTH = None
+    cap = None #use to store video capture object 
+    CAM_HEIGHT = 480
+    CAM_WIDTH =  640
+    frameR=None
+    smoothening=7
     hr_major = None # Right Hand by default
     hr_minor = None # Left hand by default
-    dom_hand = True
+    dom_hand = True #major hand is considered the dominant hand
 
     def __init__(self):
         GestureController.gc_mode = 1
         GestureController.cap = cv2.VideoCapture(0)
         GestureController.CAM_HEIGHT = GestureController.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
         GestureController.CAM_WIDTH = GestureController.cap.get(cv2.CAP_PROP_FRAME_WIDTH)
-    
+       
     def classify_hands(results):
         left , right = None,None
         try:
@@ -365,12 +370,14 @@ class GestureController:
         with mp_hands.Hands(max_num_hands = 2,min_detection_confidence=0.5, min_tracking_confidence=0.5) as hands:
             while GestureController.cap.isOpened() and GestureController.gc_mode:
                 success, image = GestureController.cap.read()
+               # cv2.rectangle=(image,(frameR,frameR),(CAM_WIDTH-frameR,CAM_HEIGHT-frameR),(255,0,255),2),
+                
 
                 if not success:
                     print("Ignore empty camera frame.")
                     continue
                 
-                image = cv2.cvtColor(cv2.flip(image, 1), cv2.COLOR_BGR2RGB)
+                image = cv2.cvtColor(cv2.flip(image, 1), cv2.COLOR_BGR2RGB) # cv2.cvtColor() function is used to convert the color space of the image
                 image.flags.writeable = False
                 results = hands.process(image)
                 
@@ -394,13 +401,16 @@ class GestureController:
                     
                     for hand_landmarks in results.multi_hand_landmarks:
                         mp_drawing.draw_landmarks(image, hand_landmarks, mp_hands.HAND_CONNECTIONS)
+                        
                 else:
                     Controller.prev_hand = None
                 cv2.imshow('ai virtual mouse', image)
-                if cv2.waitKey(5) & 0xFF == 13:
-                    break
+                  # Exit the loop when 'q' is pressed
+                if cv2.waitKey(5) & 0xFF == ord('q'):
+                 break
+                # Release resources
         GestureController.cap.release()
-        cv2.destroyAllWindows()
+        cv2 .destroyAllWindows()
 
 # uncomment to run directly
 gc1 = GestureController()
