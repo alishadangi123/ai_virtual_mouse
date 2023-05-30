@@ -73,25 +73,26 @@ class HandRecog:
     def get_dz(self,point):
         return abs(self.hand_result.landmark[point[0]].z - self.hand_result.landmark[point[1]].z)
     
-    # Function to find Gesture Encoding using current finger_state.
+# Function to find Gesture Encoding using current finger_state.
     # Finger_state: 1 if finger is open, else 0
     def set_finger_state(self):
         if self.hand_result == None:
-            return
+            return    
 
         points = [[8,5,0],[12,9,0],[16,13,0],[20,17,0]]
         self.finger = 0
-        self.finger = self.finger | 0 #thumb
+        self.finger = self.finger | 0 
         for idx,point in enumerate(points):
             
-            dist = self.get_signed_dist(point[:2])
-            dist2 = self.get_signed_dist(point[1:])
+            dist = self.get_signed_dist(point[:2])# new list containing the first two elements (x and y coordinates) 
+            dist2 = self.get_signed_dist(point[1:])# new list containing the last two elements (y and z coordinates)
+            #of the current point sublist
             
             try:
                 ratio = round(dist/dist2,1)
             except:
                 ratio = round(dist/0.01,1)
-
+#If an exception occurs during the division,it means that dist2 is equal to zero (or very close to zero i.e =0.01)
             self.finger = self.finger << 1
             if ratio > 0.5 :
                 self.finger = self.finger | 1
@@ -215,9 +216,9 @@ class Controller:
         Controller.prev_hand = [x,y]
 
         if distsq <= 25:
-            ratio = 0
+            ratio = 0 # no cursor movement
         elif distsq <= 900:
-            ratio = 0.07 * (distsq ** (1/2))
+            ratio = 0.07 * (distsq ** (1/2)) #**=power(^)
         else:
             ratio = 2.1
         x , y = x_old + delta_x*ratio , y_old + delta_y*ratio
@@ -360,6 +361,7 @@ class GestureController:
             GestureController.hr_minor = left
         else :
             GestureController.hr_major = left
+
             GestureController.hr_minor = right
 
     def start(self):
@@ -370,9 +372,7 @@ class GestureController:
         with mp_hands.Hands(max_num_hands = 2,min_detection_confidence=0.5, min_tracking_confidence=0.5) as hands:
             while GestureController.cap.isOpened() and GestureController.gc_mode:
                 success, image = GestureController.cap.read()
-               # cv2.rectangle=(image,(frameR,frameR),(CAM_WIDTH-frameR,CAM_HEIGHT-frameR),(255,0,255),2),
-                
-
+           
                 if not success:
                     print("Ignore empty camera frame.")
                     continue
